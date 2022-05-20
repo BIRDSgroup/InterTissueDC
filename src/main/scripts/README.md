@@ -8,9 +8,9 @@
 ```{r}
 ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(20,20,20,20))
 w <- ip[[1]]
-mg <- ip[[2]]
+MG <- ip[[2]]
 
-BM36_spv <- get_SPV_BrainRegion("BM36", MarkerGenes = mg)
+BM36_spv <- get_SPV_BrainRegion("BM36", MarkerGenes = MG)
 write.csv(BM36_spv,
           paste(path_results, "BM36_CellCODE_80mg_4cellTypes.csv", sep = ""))
 BM44_spv <- get_SPV_BrainRegion("BM44", MarkerGenes = mg)
