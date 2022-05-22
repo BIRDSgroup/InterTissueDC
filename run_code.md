@@ -1,4 +1,5 @@
-# How to run the code? - Description of the workflow
+# How to obtain Differentially Correlated (DC) edges after Cell-type correction (CTC)
+## Workflow
 
 This document details the analysis workflow. A walkthrough of the code used in this study is presented as a tutorial to ensure reproducibility.
 
