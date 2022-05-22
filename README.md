@@ -1,10 +1,26 @@
 # Brain inter-regional molecular connectivity analysis in AD
 
-This repository provides all the code necessary to reproduce the results obtained in the study "*Alzheimer’s disease rewires gene coexpression networks coupling different brain regions*".
+This is the official repository of the paper "Alzheimer’s disease rewires gene coexpression networks coupling different brain regions" by Sanga Mitra (+), Kailash B P (+), Srivatsan C R, Naga Venkata Saikumar, Philge Philip and Manikandan Narayanan (+ equal contributions).
+
+The code was developed by Manikandan Narayanan (in consultation with the other co-authors of the paper listed above), and these developers are jointly referred to as the "BIRDS Group, IIT Madras" in the preamble of all code files in this InterTissueDC project.
 
 <p align="center">
   <img src="https://github.com/BIRDSgroup/InterTissueDC/blob/main/images/methodology.png" />
 </p>   
+
+## License preamble
+
+Copyright 2022 BIRDS Group, IIT Madras
+
+InterTissueDC code is open source: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+InterTissueDC is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with BioEmbedS. If not, see https://www.gnu.org/licenses/.
+
+## Dependencies
+
+See requirements.txt file for the list of dependencies. Setup everything by executing src/main/scripts/libraries.R
 
 ### run_code.md
 
