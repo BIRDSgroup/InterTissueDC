@@ -10,3 +10,7 @@ This repository provides all the code necessary to reproduce the results obtaine
 
 Provides step by step instructions on how to run all the pieces of code to generate the results obtained in the study.
 
+## Results
+
+Results generated in this study is made available [here](https://drive.google.com/drive/folders/1WjsbS0mL1iiNAKeXGSjQ94DlodWP1OGi?usp=sharing).
+
