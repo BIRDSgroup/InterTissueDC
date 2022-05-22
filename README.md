@@ -1,6 +1,6 @@
 # Brain inter-regional molecular connectivity analysis in AD
 
-This repository provides all the code necessary to reproduce the results obtained in this study.
+This repository provides all the code necessary to reproduce the results obtained in the study "*Alzheimer’s disease rewires gene coexpression networks coupling different brain regions*".
 
 <p align="center">
   <img src="https://github.com/BIRDSgroup/InterTissueDC/blob/main/images/methodology.png" />
