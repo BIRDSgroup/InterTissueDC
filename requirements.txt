@@ -1,0 +1,11 @@
+packages <- c("remotes", "ggplot2", "dplyr", "BiocManager", "readxl", "limma", "edgeR",
+              "BiocGenerics", "Biobase", "S4Vectors", "IRanges", "cli", "AnnotationDbi",
+              "annotate", "genefilter", "BiocParallel", "sva", "CellCODE", "BRETIGEA",
+              "Matrix", "ggdendro", "pheatmap", "viridis", "RColorBrewer",
+              "psych", "ggpubr", "GGally", "ggpmisc", "ggfortify", "corrplot", "reshape2",
+              "ellipsis", "lubridate", "pillar", "S4Vectors", "splus2R", "vctrs", "VennDiagram",
+              "xts", "purrr", "stringr")
+
+BiocPackages <- c("limma", "edgeR", "BiocGenerics", "Biobase", "S4Vectors",
+                  "IRanges", "AnnotationDbi", "annotate", "genefilter",
+                  "BiocParallel", "sva", "GSALightning")
