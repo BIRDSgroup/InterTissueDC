@@ -22,7 +22,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 See requirements.txt file for the list of dependencies.
 
-Go to src/main/scripts/libraries.R. Change working directory in line 3. Soruce the script to install, and load all the necessary packages.
+Go to src/main/scripts/libraries.R. Change working directory in line 3. Source the script to install, and load all the necessary packages.
 
 ### run_code.md
 
