@@ -19,12 +19,6 @@ base frequency : 2.1GHz)
 
 Details can also be found at session_info.txt.
 
-## Install and load required packages
-
-Go to src/main/scripts/libraries.R. Change working directory in line 3. 
-
-Soruce the script to install, and load all the necessary packages.
-
 ## run find_DC.R
 
 The find_dc code identifies the significantly correlated edges, and significantly differentially correlated edges across brain tissues/regions.
