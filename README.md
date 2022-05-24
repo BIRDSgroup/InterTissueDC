@@ -2,7 +2,7 @@
 
 This is the official repository of the paper "*Alzheimer’s disease rewires gene coexpression networks coupling different brain regions*" by Sanga Mitra (+), Kailash B P (+), Srivatsan C R, Naga Venkata Saikumar, Philge Philip and Manikandan Narayanan (+ equal contributions).
 
-The code was developed by Manikandan Narayanan (in consultation with the other co-authors of the paper listed above), and these developers are jointly referred to as the "BIRDS Group, IIT Madras" in the preamble of all code files in this InterTissueDC project.
+The code was developed by Kailash B P, Manikandan Narayanan (in consultation with the other co-authors of the paper listed above), and these developers are jointly referred to as the "BIRDS Group, IIT Madras" in the preamble of all code files in this InterTissueDC project.
 
 <p align="center">
   <img src="https://github.com/BIRDSgroup/InterTissueDC/blob/main/images/methodology.png" />
