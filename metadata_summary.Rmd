@@ -1,0 +1,308 @@
+---
+title: "InterTissueDC"
+author: "Kailash B P"
+date: "2022-08-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("/Users/kailashbp/Documents/InterTissueDC/")
+```
+
+## Load libraries
+
+```{r}
+library(tidyverse)
+library(purrr)
+library(vtable)
+```
+
+## Load files and libraries
+
+Find common individual IDs for each brain combination, for Control and Definite AD separately, refer to meta2_filtered
+
+```{r}
+meta1 <- read.csv("data/msbb_metadata_mapping_and_group_assignment.csv",
+                  stringsAsFactors = FALSE, header = T)
+meta2 <- read.csv("data/rna_metadata_onlyBAM_noExclude_noDup_Nov2018.csv",
+                  stringsAsFactors = FALSE, header = T)
+
+clinical <- read.csv("data/MSBB_clinical.csv", stringsAsFactors = FALSE, header = T)
+
+clinical_original <- read.csv("data/MSBB_clinical_original.csv", stringsAsFactors = FALSE, header = T)
+
+individual_mdata <- read.csv("data/MSBB_individual_metadata.csv", stringsAsFactors = F, header = T)
+```
+
+```{r}
+clin1 <- clinical_original %>% select(-NP.1)
+clin2 <- clinical %>% select(-DxCondition)
+all.equal(clin1, clin2)
+```
+
+
+
+```{r}
+all_barcodes <- c(get_barcode("BM10"),
+                  get_barcode("BM22"),
+                  get_barcode("BM36"),
+                  get_barcode("BM44"))
+stopifnot(length(all_barcodes) == length(unique(all_barcodes)))
+
+meta2 <- meta2 %>%
+  filter(barcode %in% all_barcodes) %>%
+  filter(Action != "Remap")
+
+meta2_filtered <- meta2 %>% filter(DxCondition %in% c("Control", "Definite AD")) %>% 
+  select(individualIdentifier, PMI, AOD, SEX, DxCondition) %>%
+  distinct()
+```
+
+```{r}
+meta2_filtered %>% select(DxCondition) %>% mutate_if(is.character, as.factor) %>% summary()
+```
+
+## Individual ID is used to map samples from across tissues.
+
+```{r}
+get_barcode <- function(BrainRegion){
+  return(unlist(map(strsplit(meta1 %>%
+                               select(BrainRegion) %>%
+                               filter(. != "") %>%
+                               pull(BrainRegion), "_"), 3)))}
+
+find_brainRegion_samples <- function(BrainRegion){ 
+  meta2 <- meta2 %>% filter(DxCondition %in% c("Definite AD", "Control"))
+  BR_samples <- as.factor(meta2$DxCondition[match(get_barcode(BrainRegion), meta2$barcode)])
+  return(summary(BR_samples))
+}
+```
+
+```{r}
+find_brainRegion_samples("BM10")
+find_brainRegion_samples("BM22")
+find_brainRegion_samples("BM36")
+find_brainRegion_samples("BM44")
+```
+
+```{r}
+find_brain_region_info <- function(BrainRegion){
+  BR_indv_id <- meta2$individualIdentifier[match(get_barcode(BrainRegion), meta2$barcode)]
+  BR_indv_id <- meta2_filtered[which(BR_indv_id %in% meta2_filtered$individualIdentifier),]
+  return(na.omit(BR_indv_id))
+}
+```
+
+```{r}
+find_brain_region_info("BM10") %>% select(DxCondition) %>% mutate_if(is.character, as.factor) %>% summary()
+find_brain_region_info("BM22") %>% select(DxCondition) %>% mutate_if(is.character, as.factor) %>% summary()
+find_brain_region_info("BM36") %>% select(DxCondition) %>% mutate_if(is.character, as.factor) %>% summary()
+find_brain_region_info("BM44") %>% select(DxCondition) %>% mutate_if(is.character, as.factor) %>% summary()
+```
+
+```{r}
+find_common_individual_info <- function(BrainRegionCombination){
+  BR1_indv_id <- meta2$individualIdentifier[match(get_barcode(BrainRegionCombination[1]), meta2$barcode)]
+  BR2_indv_id <- meta2$individualIdentifier[match(get_barcode(BrainRegionCombination[2]), meta2$barcode)]
+  common_BR_ids <- intersect(BR1_indv_id, BR2_indv_id)
+  common_ids <- meta2_filtered[which(common_BR_ids %in% meta2_filtered$individualIdentifier),]
+  return(common_ids)
+}
+
+get_summaryStat <- function(BrainRegionCombination, SampleCondition){
+  return(find_common_individual_info(BrainRegionCombination) %>%
+           filter(DxCondition == SampleCondition) %>%
+           select(-individualIdentifier) %>%
+           mutate_if(is.character, as.factor) %>%
+           summary()
+         )
+}
+```
+
+
+```{r}
+get_summaryStat(c("BM10", "BM22"), "Control")
+get_summaryStat(c("BM10", "BM22"), "Definite AD")
+
+get_summaryStat(c("BM10", "BM36"), "Control")
+get_summaryStat(c("BM10", "BM36"), "Definite AD")
+
+get_summaryStat(c("BM10", "BM44"), "Control")
+get_summaryStat(c("BM10", "BM44"), "Definite AD")
+
+get_summaryStat(c("BM22", "BM36"), "Control")
+get_summaryStat(c("BM22", "BM36"), "Definite AD")
+
+get_summaryStat(c("BM22", "BM44"), "Control")
+get_summaryStat(c("BM22", "BM44"), "Definite AD")
+
+get_summaryStat(c("BM36", "BM44"), "Control")
+get_summaryStat(c("BM36", "BM44"), "Definite AD")
+```
+
+## Old code
+
+MSBB clinical file doesn't have DxCondition
+
+```{r}
+ensid_sampleid <- meta1
+rna_metadata_processed <- meta2
+
+unique(paste(meta2_filtered$DxCondition, clinical$NP.1[match(meta2_filtered$individualIdentifier, clinical$individualIdentifier)]))
+unique(paste(meta2$DxCondition, clinical$NP.1[match(meta2$individualIdentifier, clinical$individualIdentifier)]))
+
+find_sample_group <- function(BrainRegion){
+  barcodes <- na.omit(sapply(strsplit(ensid_sampleid[,BrainRegion],"_"), function(x){x[3]}))
+  ind_id <- rna_metadata_processed$individualIdentifier[match(barcodes, rna_metadata_processed$barcode)]
+  return(meta2$DxCondition[match(ind_id, meta2$individualIdentifier)])
+}
+
+find_sample_group("BM10")
+
+bm10_samples <- ensid_sampleid$BM10[which(ensid_sampleid$BM10!= "")]
+bm22_samples <- ensid_sampleid$BM22[which(ensid_sampleid$BM22!= "")]
+bm36_samples <- ensid_sampleid$BM36[which(ensid_sampleid$BM36!= "")]
+bm44_samples <- ensid_sampleid$BM44[which(ensid_sampleid$BM44!= "")]
+
+get_individual_id <- function(samples){
+  return(rna_metadata_processed$individualIdentifier[
+    match(unlist(sapply(samples, function(x){unlist(strsplit(x, "_"))[3]})),
+          rna_metadata_processed$barcode)]
+  )
+}
+
+all_samples <- unique(c(get_individual_id(bm10_samples),
+                        get_individual_id(bm22_samples),
+                        get_individual_id(bm36_samples),
+                        get_individual_id(bm44_samples)))
+
+Dx <- rna_metadata_processed$DxCondition[match(all_samples, rna_metadata_processed$individualIdentifier)]
+
+paste("Number of CTL individuals in this study: ", length(which(Dx == "Control")))
+paste("Number of AD individuals in this study: ", length(which(Dx == "Definite AD")))
+
+# Finding individual brain region sample size -----------------------------
+
+get_sample_dx_class <- function(BrainRegion, brain_region_samples){
+  samples <- unlist(map(str_split(brain_region_samples, "\\."), 2))
+  sample_dx_class <- rna_metadata_processed$DxCondition[match(samples, rna_metadata_processed$sampleIdentifier)]
+  cat(paste("Number of AD samples for ", BrainRegion, " is: ", length(which(sample_dx_class == "Definite AD")), "\n"))
+  cat(paste("Number of Control samples for ", BrainRegion, " is: ", length(which(sample_dx_class == "Control")), "\n"))
+}
+
+get_sample_dx_class("BM10", bm10_samples)
+get_sample_dx_class("BM22", bm22_samples)
+get_sample_dx_class("BM36", bm36_samples)
+get_sample_dx_class("BM44", bm44_samples)
+
+# Finding paired brain-region sample sizes --------------------------------
+
+get_paired_sample_size <- function(BR){
+  ad_ids_BR1_2 <- find_common_individual_info(BR) %>% filter(DxCondition == "Definite AD") %>% pull(individualIdentifier)
+  ctl_ids_BR1_2 <- find_common_individual_info(BR) %>% filter(DxCondition == "Control") %>% pull(individualIdentifier)
+  cat(paste("Number of AD samples for ", BR[1], "-", BR[2], " is : ", length(ad_ids_BR1_2), "\n"))
+  cat(paste("Number of CTL samples for ", BR[1], "-", BR[2], " is : ", length(ctl_ids_BR1_2)))
+}
+
+get_paired_sample_size(c("BM10", "BM22"))
+get_paired_sample_size(c("BM10", "BM36"))
+get_paired_sample_size(c("BM10", "BM44"))
+get_paired_sample_size(c("BM22", "BM36"))
+get_paired_sample_size(c("BM22", "BM44"))
+get_paired_sample_size(c("BM36", "BM44"))
+```
+
+## Old code my way
+
+```{r}
+get_summaryStat(c("BM10", "BM22"), "Control")
+```
+
+### Looking at the ids files
+
+```{r}
+Condition <- "AD"
+BrainRegionCombination <- c("BM10", "BM22")
+
+find_if_all_samples_are_ad_or_ctl <- function(BrainRegionCombination, Condition){
+  ids <- read.csv(paste("results/", Condition, "_ids", BrainRegionCombination[1], BrainRegionCombination[2], ".csv", sep = ""),
+                stringsAsFactors = F, header = T)
+  ids <- ids %>% pull(x)
+  cat(paste("Number of ", Condition, " samples is: ", length(ids)), "\n")
+  return(unique(meta2_filtered$DxCondition[match(ids, meta2_filtered$individualIdentifier)]))
+}
+
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM22"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM22"), "AD")
+
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM36"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM36"), "AD")
+
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM44"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM10", "BM44"), "AD")
+
+find_if_all_samples_are_ad_or_ctl(c("BM22", "BM36"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM22", "BM36"), "AD")
+
+find_if_all_samples_are_ad_or_ctl(c("BM22", "BM44"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM22", "BM44"), "AD")
+
+find_if_all_samples_are_ad_or_ctl(c("BM36", "BM44"), "CTL")
+find_if_all_samples_are_ad_or_ctl(c("BM36", "BM44"), "AD")
+```
+
+```{r}
+get_summaryStat_from_ids <- function(BrainRegionCombination, SampleCondition){
+  ids <- read.csv(paste("results/", SampleCondition, "_ids", BrainRegionCombination[1], BrainRegionCombination[2], ".csv", sep = ""),
+                stringsAsFactors = F, header = T)
+  ids <- ids %>% pull(x)
+  return(sumtable(meta2_filtered[match(ids, meta2_filtered$individualIdentifier),] %>%
+                    select(-individualIdentifier) %>%
+                    mutate_if(is.character, as.factor),
+            vars = c("PMI", "AOD", "SEX", "DxCondition"),
+            title = paste(BrainRegionCombination[1], BrainRegionCombination[2], sep = "-")))
+}
+
+get_summaryStat_from_ids(c("BM10", "BM22"), "CTL")
+get_summaryStat_from_ids(c("BM10", "BM22"), "AD")
+
+get_summaryStat_from_ids(c("BM10", "BM36"), "CTL")
+get_summaryStat_from_ids(c("BM10", "BM36"), "AD")
+
+get_summaryStat_from_ids(c("BM10", "BM44"), "CTL")
+get_summaryStat_from_ids(c("BM10", "BM44"), "AD")
+
+get_summaryStat_from_ids(c("BM22", "BM36"), "CTL")
+get_summaryStat_from_ids(c("BM22", "BM36"), "AD")
+
+get_summaryStat_from_ids(c("BM22", "BM44"), "CTL")
+get_summaryStat_from_ids(c("BM22", "BM44"), "AD")
+
+get_summaryStat_from_ids(c("BM36", "BM44"), "CTL")
+get_summaryStat_from_ids(c("BM36", "BM44"), "AD")
+```
+
+## Metadata of different individuals
+
+```{r}
+find_set_diff <- function(BrainRegionCombination){
+  list.a <- find_common_individual_info(BrainRegionCombination) %>% pull(individualIdentifier)
+  ad_ids <- read.csv(paste("results/", "AD", "_ids", BrainRegionCombination[1], BrainRegionCombination[2], ".csv", sep = ""),
+                stringsAsFactors = F, header = T)
+  ctl_ids <- read.csv(paste("results/", "CTL", "_ids", BrainRegionCombination[1], BrainRegionCombination[2], ".csv", sep = ""),
+                stringsAsFactors = F, header = T)
+  list.b <- c(ad_ids %>% pull(x), ctl_ids %>% pull(x))
+  diff_meta_data <- meta2[match(setdiff(list.a, list.b), meta2$individualIdentifier),]
+  diff_meta_data <- diff_meta_data %>% filter(BrodmannArea %in% BrainRegionCombination)
+  cat(length(unique(diff_meta_data %>% pull(individualIdentifier))))
+  return(diff_meta_data %>% arrange(individualIdentifier))
+}
+
+find_set_diff(c("BM10", "BM22"))
+find_set_diff(c("BM10", "BM36"))
+find_set_diff(c("BM10", "BM44"))
+find_set_diff(c("BM22", "BM36"))
+find_set_diff(c("BM22", "BM44"))
+find_set_diff(c("BM36", "BM44"))
+```
