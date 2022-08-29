@@ -1,6 +1,6 @@
 # Brain inter-regional molecular connectivity analysis in AD
 
-This is the official repository of the paper "*Alzheimer’s disease rewires gene coexpression networks coupling different brain regions*" by Sanga Mitra (+), Kailash B P (+), Srivatsan C R, Naga Venkata Saikumar, Philge Philip and Manikandan Narayanan (+ equal contributions).
+This is the official repository of the paper ["*Alzheimer’s disease rewires gene coexpression networks coupling different brain regions*"](https://www.biorxiv.org/content/10.1101/2022.05.22.492888v1) by Sanga Mitra (+), Kailash B P (+), Srivatsan C R, Naga Venkata Saikumar, Philge Philip and Manikandan Narayanan (+ equal contributions).
 
 The code was developed by Kailash B P, Manikandan Narayanan (in consultation with the other co-authors of the paper listed above), and these developers are jointly referred to as the "BIRDS Group, IIT Madras" in the preamble of all code files in this InterTissueDC project.
 
