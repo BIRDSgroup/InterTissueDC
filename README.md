@@ -28,6 +28,11 @@ Go to src/main/scripts/libraries.R. Change working directory in line 3. Source t
 
 Provides step by step instructions on how to run all the pieces of code to generate the results obtained in the study.
 
+## Data
+
+* Data paper: [The Mount Sinai cohort of large-scale genomic, transcriptomic and proteomic data in Alzheimer's disease](https://www.nature.com/articles/sdata2018185)
+* Synapse link to data: [MSBB synapse](https://www.synapse.org/#!Synapse:syn3159438)
+  
 ## Results
 
 Results generated in this study is made available [here](https://drive.google.com/drive/folders/1WjsbS0mL1iiNAKeXGSjQ94DlodWP1OGi?usp=sharing).
