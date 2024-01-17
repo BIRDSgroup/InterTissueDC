@@ -125,12 +125,14 @@ predict_gExp <- function(gExp, cf){
   
   count <- 0
   for(i in gene_list){
+    if(count %% 1000 == 0){
+      message(count, "of", length(gene_list), "\n")
+    }
     model <- lm(paste0(i, "~", "ast + mic + neu + oli"), data = df)
     pred <- predict(model, df)
     ct_correction <- pred - rep(coef(model)["(Intercept)"], length(pred))
     df2[,i] <- ct_correction
     count = count + 1
-    cat(paste(count, "of", length(gene_list), "\n"))
   }
   return(t(df2))
 }
@@ -184,8 +186,7 @@ bm44_geneExp <- subset(bm44_geneExp, select = -c(sample_gp))
 bm10_pred <- predict_gExp(bm10_geneExp, BM10_spv)
 bm22_pred <- predict_gExp(bm22_geneExp, BM22_spv)
 bm36_pred <- predict_gExp(bm36_geneExp, BM36_spv)
-bm44_pred <- predict_gExp(bm44_geneExp, BM44_spv) # 8 26
-# write.csv(matrix(rexp(10), 2), "random.csv") # 6:05 startime 6 46 end time for BM36
+bm44_pred <- predict_gExp(bm44_geneExp, BM44_spv)
 
 # Linear regression model - cell type correction --------------------------
 
@@ -299,3 +300,4 @@ write.csv(bm36_3644_ad_geneExp_corrected, paste("results/", "ADBM36_BM36BM44_cel
 write.csv(bm44_3644_ad_geneExp_corrected, paste("results/", "ADBM44_BM36BM44_cellTypeCorrected.csv", sep = ""))
 write.csv(bm36_3644_ctl_geneExp_corrected, paste("results/", "CTLBM36_BM36BM44_cellTypeCorrected.csv", sep = ""))
 write.csv(bm44_3644_ctl_geneExp_corrected, paste("results/", "CTLBM44_BM36BM44_cellTypeCorrected.csv", sep = ""))
+

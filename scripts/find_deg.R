@@ -3,10 +3,12 @@
 
 rm(list = ls())
 
+library(tidyverse)
+library(optparse)
+
 # Loading global variables ------------------------------------------------
 
 option_list <- list(
-  make_option(c('--workingDir'), help = "working directory", default = ""),
   make_option(c('--br'), help = 'Brain region', default = ""),
   make_option(c('--ctc'), help = "either TRUE or FALSE - TRUE if cell-type corrected", default = FALSE)
 )
@@ -14,8 +16,6 @@ option_list <- list(
 option.parser <- OptionParser(option_list=option_list)
 opt <- parse_args(option.parser)
 
-wdir <- opt$workingDir
-setwd(wdir)
 BR <- opt$br
 ct_corrected <- opt$ctc
 
@@ -34,19 +34,22 @@ source("scripts/libraries.R")
 
 # Loading data files ------------------------------------------------------
 
+message("** Loading gene expression data **")
 if(ct_corrected == TRUE){
   ad_ctl_gExp <- read.csv(paste("results/", BR, "_AD_CTL_cellTypeCorrected.csv", sep = ""),
                           stringsAsFactors = FALSE, row.names = 1)
   colnames(ad_ctl_gExp) <- ensid_sampleid$ENS_ID
 } else{
-  bm <- read.csv(paste("data/",BR,'.csv',sep=""),stringsAsFactors = FALSE, row.names = 1)
+  bm <- readBMfile(BR)
   sample_gp <- find_sample_group(BR)
   ad_ctl_gExp <- bm[,which(sample_gp %in% c("Control", "Definite AD"))]
   ad_ctl_gExp <- t(ad_ctl_gExp)
 }
+message("** Finished loading gene expression data **")
 
+message("** Finding sample disease condition **")
 barcodes <- sapply(strsplit(row.names(ad_ctl_gExp),"_"), function(x){x[3]})
-mdata <- read.csv(paste(path_data, "rna_metadata_onlyBAM_noExclude_noDup_Nov2018.csv", sep = ""),
+mdata <- read.csv(paste("data/", "rna_metadata_onlyBAM_noExclude_noDup_Nov2018.csv", sep = ""),
                      stringsAsFactors = FALSE)
 sample_condition <- mdata$DxCondition[match(barcodes, mdata$barcode)]
 
@@ -60,17 +63,20 @@ sample_condition <- mdata$DxCondition[match(barcodes, mdata$barcode)]
 # where each number represents a pair, and the sign represents the conditions.
 # tests - The tests to performed. Can be either the default "unpaired" for unpaired T-tests or "paired" for paired T-tests.
 
+message("** Running unpaired Wilcox test **")
 deg <- wilcoxTest(t(ad_ctl_gExp), sample_condition, tests = "unpaired")
 deg <- as.data.frame(deg)
 
 # Adding average expression -----------------------------------------------
 
+message("** Adding average gene expression **")
 deg$AvgExpn <- apply(ad_ctl_gExp, 2, mean)
 
 # Calculating logFC -------------------------------------------------------
 
 # logFC = log((geneAD - geneCTL)/(geneCTL))
 
+message("** Calculating logFC **")
 ad_gExp <- ad_ctl_gExp[which(sample_condition == "Definite AD"),]
 ctl_gExp <- ad_ctl_gExp[which(sample_condition == "Control"),]
 
@@ -78,14 +84,17 @@ ad_avg <- apply(ad_gExp, 2, mean)
 ctl_avg <- apply(ctl_gExp, 2, mean)
 
 FC <- ad_avg - ctl_avg
-FC["ENSG00000080709"]
+
+message("logFC for ENSG00000080709 is ", FC["ENSG00000080709"])
 
 deg$logFC <- FC
 
 # Adding mapped gene symbol -----------------------------------------------
 
+message("** Adding mapped gene symbol **")
 mapping_file <- read.csv(paste("data/Mapped_h37_ens_to_gene.csv", sep = ""),
                          stringsAsFactors = FALSE)
-deg$gene <- mapping_file$gene_name[match(row.names(deg), mapping_file$gene_id)]
+deg$gene <- mapping_file$gene_name[match(row.names(deg), mapping_file$"gene_id")]
 
+message("** Writing differential gene expression output **")
 write.csv(deg, paste("results/", BR, ct_file_name, "_DEG_WilcoxonRankSumTest.csv", sep = ""))
