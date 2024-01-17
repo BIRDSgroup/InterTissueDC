@@ -105,8 +105,8 @@ n.ctl <- dim(CTL1)[1]
 # Spearman is used here instead of Pearson, because Spearman works better for non-linear data.
 
 message("**Beginning calculating spearman correlations within AD, and within CTL**")
-if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges.csv", sep = "")) &&
-   !file.exists(paste("results/",BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges.csv", sep = ""))){
+if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = "")) &&
+   !file.exists(paste("results/",BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))){
   ########### Gene-Gene Correlation analysis
   # Rows are from BR1, columns are from BR2
   cor_AD12 <- cor(AD1, AD2, method = "spearman")
@@ -161,8 +161,8 @@ if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges.csv
   cor_AD12_edges$combined <- paste(cor_AD12_edges$g1.BR1,cor_AD12_edges$g2.BR2)
   cor_CTL12_edges$combined <- paste(cor_CTL12_edges$g1.BR1,cor_CTL12_edges$g2.BR2)
   
-  write.csv(cor_AD12_edges, paste("results/", BR[1], BR[2], "CTCorrectedADCorrelatedEdges.csv", sep = ""))
-  write.csv(cor_CTL12_edges, paste("results/", BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges.csv", sep = ""))
+  write.csv(cor_AD12_edges, paste("results/", BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
+  write.csv(cor_CTL12_edges, paste("results/", BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
   message("**Number of significantly correlated edges in AD ", dim(cor_AD12_edges)[1], "**")
   message("**Number of significantly correlated edges in CTL ", dim(cor_CTL12_edges)[1], "**")
   
@@ -179,7 +179,7 @@ if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges.csv
 }
 
 message("** Finding union edges **")
-if(!file.exists(paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], ".csv", sep = ""))){
+if(!file.exists(paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))){
   # For a given edge a-b
   edges <- strsplit(union12, " ")
   mat  <- matrix(unlist(edges), ncol = 2, byrow = TRUE)
@@ -200,11 +200,11 @@ if(!file.exists(paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2
   
   edges <- cbind(dplyr::select(edges, c(a,b)), union_ad, union_ctl)
   
-  write.csv(edges, paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], ".csv", sep = ""))
+  write.csv(edges, paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
 } else {
   
   message("**Pre-computed UnionCorrelatedEdges are being used**")
-  edges <- read.csv(paste("results/", "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], ".csv", sep = ""))
+  edges <- read.csv(paste("results/", "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
 }
 message("** Finished finding/loading Union correlated edges **")
 
@@ -215,7 +215,7 @@ message("** Beginning DC analysis **")
 # r.test DC edges ---------------------------------------------------------
 
 if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1],BR[2],toString(file_name),".rda",sep="")) &&
-   !file.exists(paste("results/", "DCEdges_ct_correction",BR[1],BR[2],".csv",sep=""))){
+   !file.exists(paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))){
   
   # Initializing list of pvalues vector
   p <- rep(NA, dim(edges)[1])
@@ -257,9 +257,9 @@ if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1
   rm(edges)
   r <- which(p_adjusted <= fdr_val)
   dc_rtest <- dcres[r,]
-  write.csv(dc_rtest, paste("results/", "DCEdges_ct_correction",BR[1],BR[2],".csv",sep=""))
+  write.csv(dc_rtest, paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))
 } else {
-  dc_rtest <- read.csv(paste("results/", "DCEdges_ct_correction",BR[1],BR[2],".csv",sep=""))
+  dc_rtest <- read.csv(paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))
 }
 
 message("**Number of DC edges ", dim(dc_rtest)[1], "**")
