@@ -245,13 +245,7 @@ if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1
     
     i <- i + 1
   }
-  # Removing NAs in the end of the vector
-  indices <- which(!is.na(p))
-  stopifnot(length(is.na(p)) > 2)
-  p <- p[indices]
-  z <- z[indices]
-  cor_CTL <- cor_CTL[indices]
-  cor_AD <- cor_AD[indices]
+ 
   # NOTE the following file contains p values before adjustment
   save(p, file = paste("results/", "p_vals_without_adjustment_ct_correction",BR[1],BR[2],toString(file_name),".rda",sep=""))
   
