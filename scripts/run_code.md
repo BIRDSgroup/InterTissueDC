@@ -101,6 +101,26 @@ Rscript scripts/find_dc_after_ct_correction.R --br1 BM44 --br2 BM44 --fdr 0.01
 4. p_vals_without_adjustment_ct_correctionBM36BM44Edges0.01.rda
 5. DCEdges_ct_correctionBM36BM44.csv
 
+## run_find_deg.R
+Find differentially expressed genes between "Definite AD" and "Control" for each brain region.
+
+```
+Rscript scripts/find_deg.R --br BM_10 --ctc FALSE
+Rscript scripts/find_deg.R --br BM_22 --ctc FALSE
+Rscript scripts/find_deg.R --br BM_36 --ctc FALSE
+Rscript scripts/find_deg.R --br BM_44 --ctc FALSE
+
+Rscript scripts/find_deg.R --br BM10 --ctc TRUE
+Rscript scripts/find_deg.R --br BM22 --ctc TRUE
+Rscript scripts/find_deg.R --br BM36 --ctc TRUE
+Rscript scripts/find_deg.R --br BM44 --ctc TRUE
+```
+### OUTPUT example for BM36
+
+Change input parameters to obtain the following output files
+1. BM36_DEG_WilcoxonRankSumTest.csv
+2. BM36cellTypeCorrected_DEG_WilcoxonRankSumTest.csv
+
 ## run analyze_dc.R
 
 The user needs to specify. We are using all the 1000 marker genes for each cell type (ast, mic, neu, oli) identified in the BRETIGEA study to label the DC edges.
@@ -122,26 +142,5 @@ Rscript scripts/analyze_DC.R
 4. BM36BM44_ct_correctionMapped_DCEdgesWithoutNA.csv
 5. CTL_idsBM36BM44.csv with braak labelling
 6. AD_idsBM36BM44.csv with braak labelling
-
-## run_find_deg.R
-Find differentially expressed genes between "Definite AD" and "Control" for each brain region.
-
-```
-Rscript scripts/find_deg.R --br BM_10 --ctc FALSE
-Rscript scripts/find_deg.R --br BM_22 --ctc FALSE
-Rscript scripts/find_deg.R --br BM_36 --ctc FALSE
-Rscript scripts/find_deg.R --br BM_44 --ctc FALSE
-
-Rscript scripts/find_deg.R --br BM10 --ctc TRUE
-Rscript scripts/find_deg.R --br BM22 --ctc TRUE
-Rscript scripts/find_deg.R --br BM36 --ctc TRUE
-Rscript scripts/find_deg.R --br BM44 --ctc TRUE
-```
-
-### OUTPUT example for BM36
-
-Change input parameters to obtain the following output files
-1. BM36_DEG_WilcoxonRankSumTest.csv
-2. BM36cellTypeCorrected_DEG_WilcoxonRankSumTest.csv
 
 ###### Please feel free to raise an issue on GitHub for clarifications.
