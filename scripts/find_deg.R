@@ -42,8 +42,7 @@ if(ct_corrected == TRUE){
 } else{
   bm <- readBMfile(BR)
   sample_gp <- find_sample_group(BR)
-  ad_ctl_gExp <- bm[,which(sample_gp %in% c("Control", "Definite AD"))]
-  ad_ctl_gExp <- t(ad_ctl_gExp)
+  ad_ctl_gExp <- bm[which(sample_gp %in% c("Control", "Definite AD")),]
 }
 message("** Finished loading gene expression data **")
 

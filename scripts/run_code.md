@@ -124,6 +124,7 @@ Rscript scripts/analyze_DC.R
 6. AD_idsBM36BM44.csv with braak labelling
 
 ## run_find_deg.R
+Find differentially expressed genes between "Definite AD" and "Control" for each brain region.
 
 ```
 Rscript scripts/find_deg.R --br BM_10 --ctc FALSE
