@@ -8,7 +8,7 @@ libDirectory <- "libraries/"
 # Loading libraries -------------------------------------------------------
 
 
-if (!require("pacman")){install.packages("pacman", lib = libDirectory)} 
+if (!require("pacman")){install.packages("pacman", lib = libDirectory, repos = "http://cran.us.r-project.org")} 
 
 # Package names
 packages <- c("tidyverse", "remotes", "ggplot2", "dplyr", "BiocManager", "readxl", "limma", "edgeR",
@@ -23,11 +23,11 @@ packages <- c("tidyverse", "remotes", "ggplot2", "dplyr", "BiocManager", "readxl
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages], INSTALL_opts = "--no-multiarch",
-                   dependencies = TRUE, lib = libDirectory)
+                   dependencies = TRUE, lib = libDirectory, repos = "http://cran.us.r-project.org")
 }
 
 # if (!require("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager")
+#   install.packages("BiocManager", repos = "http://cran.us.r-project.org")
 
 # BiocManager::install("sva", lib = libDirectory)
 
@@ -52,10 +52,11 @@ if (any(BioC_installed_packages == FALSE)) {
 ipak <- function(pkg){
   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
   if (length(new.pkg)) 
-    install.packages(new.pkg, dependencies = TRUE, INSTALL_opts = "--no-multiarch", lib = libDirectory)
+    install.packages(new.pkg, dependencies = TRUE, INSTALL_opts = "--no-multiarch", lib = libDirectory, repos = "http://cran.us.r-project.org")
   sapply(pkg, require, character.only = TRUE)
 }
 
 # usage
 packages <- c(packages, BiocPackages)
 ipak(packages)
+

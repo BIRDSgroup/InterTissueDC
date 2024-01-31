@@ -30,6 +30,19 @@ message("**FDR threshold is ", fdr_val, "**")
 
 file_name <- paste("Edges", toString(fdr_val), sep = "")
 
+if(BR[1] == BR[2]){
+  analysis_type <- "within_region/"
+} else if(BR[1] != BR[2]){
+  analysis_type <- "between_region/"
+}
+
+if (!dir.exists("results/after_ctc_between_region")){
+  dir.create("results/after_ctc_between_region")
+}
+if (!dir.exists("results/after_ctc_within_region")){
+  dir.create("results/after_ctc_within_region")
+}
+
 # Loading necessary packages ----------------------------------------------
 
 message("**Loading packages**")
@@ -42,7 +55,6 @@ message("**Finished loading packages**")
 # AMP-AD_MSBB_MSSM_BM_22.normalized.sex_race_age_RIN_PMI_exonicRate_rRnaRate_batch_adj.tsv
 # AMP-AD_MSBB_MSSM_BM_36.normalized.sex_race_age_RIN_PMI_exonicRate_rRnaRate_batch_adj.tsv
 # AMP-AD_MSBB_MSSM_BM_44.normalized.sex_race_age_RIN_PMI_exonicRate_rRnaRate_batch_adj.tsv
-# max(theAboveMatrix - GeneExpMatrixInFolder) is very small - hence they are same matrices
 
 # OUTPUT files generated --------------------------------------------------
 
@@ -105,8 +117,8 @@ n.ctl <- dim(CTL1)[1]
 # Spearman is used here instead of Pearson, because Spearman works better for non-linear data.
 
 message("**Beginning calculating spearman correlations within AD, and within CTL**")
-if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = "")) &&
-   !file.exists(paste("results/",BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))){
+if(!file.exists(paste("results/", "after_ctc_", analysis_type, BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = "")) &&
+   !file.exists(paste("results/", "after_ctc_", analysis_type, BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))){
   ########### Gene-Gene Correlation analysis
   # Rows are from BR1, columns are from BR2
   cor_AD12 <- cor(AD1, AD2, method = "spearman")
@@ -114,9 +126,20 @@ if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr
   cor_CTL12 <- cor(CTL1, CTL2, method = "spearman")
   message("**Finished calculating spearman correlations within CTL**")
   
+  # if within-region, then lower triangle = upper triangle, so removing repeat edges
+  # also, cor between same vector is 1, and we are considering these edges.
+  if(BR[1] == BR[2]){
+    cor_AD12[lower.tri(cor_AD12)] <- NA
+    cor_CTL12[lower.tri(cor_CTL12)] <- NA
+    
+    diag(cor_AD12) <- NA
+    diag(cor_CTL12) <- NA
+  }
+  
   stopifnot(colnames(cor_AD12) == rownames(cor_AD12), colnames(cor_AD12) == ens_genes)
   stopifnot(colnames(cor_CTL12) == rownames(cor_CTL12), rownames(cor_CTL12) == ens_genes)
   
+  # na.omit(p.adjust(c(0.001, 0.5, 0.9, NA), method = "BH")) == p.adjust(c(0.001, 0.5, 0.9), method = "BH") 
   stopifnot(nrow(AD2) == n.ad)
   p_AD12 <- pvalfromtcor(cor_AD12, n.ad)
   stopifnot(nrow(CTL2) == n.ctl)
@@ -161,8 +184,8 @@ if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr
   cor_AD12_edges$combined <- paste(cor_AD12_edges$g1.BR1,cor_AD12_edges$g2.BR2)
   cor_CTL12_edges$combined <- paste(cor_CTL12_edges$g1.BR1,cor_CTL12_edges$g2.BR2)
   
-  write.csv(cor_AD12_edges, paste("results/", BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
-  write.csv(cor_CTL12_edges, paste("results/", BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
+  write.csv(cor_AD12_edges, paste("results/", "after_ctc_", analysis_type, BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
+  write.csv(cor_CTL12_edges, paste("results/", "after_ctc_", analysis_type, BR[1], BR[2], "CTCorrectedCTLCorrelatedEdges_fdr", fdr_val, ".csv", sep = ""))
   message("**Number of significantly correlated edges in AD ", dim(cor_AD12_edges)[1], "**")
   message("**Number of significantly correlated edges in CTL ", dim(cor_CTL12_edges)[1], "**")
   
@@ -179,7 +202,7 @@ if(!file.exists(paste("results/",BR[1], BR[2], "CTCorrectedADCorrelatedEdges_fdr
 }
 
 message("** Finding union edges **")
-if(!file.exists(paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))){
+if(!file.exists(paste("results/", "after_ctc_", analysis_type, "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))){
   # For a given edge a-b
   edges <- strsplit(union12, " ")
   mat  <- matrix(unlist(edges), ncol = 2, byrow = TRUE)
@@ -200,11 +223,11 @@ if(!file.exists(paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2
   
   edges <- cbind(dplyr::select(edges, c(a,b)), union_ad, union_ctl)
   
-  write.csv(edges, paste("results/","UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
+  write.csv(edges, paste("results/", "after_ctc_", analysis_type, "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
 } else {
   
   message("**Pre-computed UnionCorrelatedEdges are being used**")
-  edges <- read.csv(paste("results/", "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
+  edges <- read.csv(paste("results/", "after_ctc_", analysis_type, "UnionCorrelatedEdges_ct_correction",BR[1],BR[2], "_fdr_", fdr_val, ".csv", sep = ""))
 }
 message("** Finished finding/loading Union correlated edges **")
 
@@ -214,8 +237,8 @@ message("** Beginning DC analysis **")
 
 # r.test DC edges ---------------------------------------------------------
 
-if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1],BR[2],toString(file_name),".rda",sep="")) &&
-   !file.exists(paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))){
+if(!file.exists(paste("results/", "after_ctc_", analysis_type, "DCEdges_ct_correction",BR[1],BR[2], ".csv",sep="")) &&
+   !file.exists(paste("results/", "after_ctc_", analysis_type, "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))){
   
   # Initializing list of pvalues vector
   p <- rep(NA, dim(edges)[1])
@@ -223,6 +246,7 @@ if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1
   cor_CTL <- rep(NA, length(p))
   cor_AD <- rep(NA, length(p))
   
+  # Potential improvement: Use purrr instead of this while loop.
   i <- 1
   while(i <= dim(edges)[1]){
     
@@ -245,23 +269,14 @@ if(!file.exists(paste("results/", "p_vals_without_adjustment_ct_correction",BR[1
     
     i <- i + 1
   }
- 
-  # NOTE the following file contains p values before adjustment
-  save(p, file = paste("results/", "p_vals_without_adjustment_ct_correction",BR[1],BR[2],toString(file_name),".rda",sep=""))
   
-  p12 <- p
-  p_adjusted <- p.adjust(p12, method = 'BH')
+  p_adjusted <- p.adjust(p, method = 'BH')
   
   # Print DC edges
-  dcres <- cbind(edges, p_adjusted, z, cor_CTL, cor_AD)
+  dcres <- cbind(edges, p, p_adjusted, z, cor_CTL, cor_AD)
   rm(edges)
-  r <- which(p_adjusted <= fdr_val)
-  dc_rtest <- dcres[r,]
-  write.csv(dc_rtest, paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))
-} else {
-  dc_rtest <- read.csv(paste("results/", "DCEdges_ct_correction",BR[1],BR[2], "fdr_", fdr_val, ".csv",sep=""))
+  write.csv(dcres, paste("results/", "after_ctc_", analysis_type, "DCEdges_ct_correction", BR[1],BR[2], ".csv",sep=""))
+  message("**DC analysis complete**")
 }
-
-message("**Number of DC edges ", dim(dc_rtest)[1], "**")
 
 rm(list = ls()) 

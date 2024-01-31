@@ -24,9 +24,13 @@ See requirements.txt file for the list of dependencies.
 
 Source the script `scripts/libaries.R` to install, and load all the necessary packages.
 
-### run_code.md
+### scripts/README.md
 
 Provides step by step instructions on how to run all the pieces of code to generate the results obtained in the study.
+
+### plots/README.md
+
+Provides step by step instructions on how to run all the pieces of code to generate the plots obtained in the study.
 
 ## Data
 

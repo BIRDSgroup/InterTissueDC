@@ -1,8 +1,5 @@
 libraries/
-data/AMP-AD_MSBB_MSSM_*
-data/MSBB_clinical.csv
-data/msbb_metadata_mapping_and_group_assignment.csv
-data/rna_metadata_onlyBAM_noExclude_noDup_Nov2018.csv
+data/
 results/
 *.err
 *.out

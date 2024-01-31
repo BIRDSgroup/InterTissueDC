@@ -1,0 +1,293 @@
+---
+title: "BRETIGEA_vs_CellCODE_analysis"
+author: "Kailash"
+date: "17/01/2024"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# Author: B P Kailash
+## Purpose: Analyse the different cell deconvolution models namely BRETIGEA and CellCODE using different parameters to check which model performs best
+
+* TRUTH data: Data with gene expression and IHC measured cell type proportions
+* https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1008120 
+* Deconvolving the contributions of cell-type heterogeneity on cortical gene expression
+
+Analyzing different models of BRETIGEA and CellCODE, CellCODE 80 marker gene (mg), four cell types (ct) (ast, mic, neu, oli) was chosen to be the best model - see CellCODE analysis, BRETIGEA analysis and Making the ggpairs plot sections of the code.
+
+# Global variables ------------------------------------------------------------
+
+```{r}
+rm(list = ls())
+
+source("scripts/utils.R")
+```
+
+# Loading libraries ------------------------------------------------------------
+
+```{r}
+.libPaths(c("libraries/", .libPaths()))
+# source("scripts/libraries.R")
+
+library(sva)
+library(BRETIGEA)
+library(CellCODE)
+library(ggplot2)
+library(GGally)
+library(corrplot)
+library(tidyverse)
+library(RColorBrewer)
+library(ggpubr)
+```
+
+# Loading data ------------------------------------------------------------
+
+```{r}
+# 49 samples, 5 cell types, 13,469 genes
+ihc_gene_exp <- read.csv(paste("data/","cortical_gene_expression.csv", sep = ""),
+                         stringsAsFactors = FALSE)
+row.names(ihc_gene_exp) <- ihc_gene_exp$X
+ihc_gene_exp <- subset(ihc_gene_exp, select = -X)
+
+# 49 samples, 6 cell types
+ihc_cell_freq <- read.csv(paste("data/","cortical_cell_frequencies.csv", sep = ""),
+                          stringsAsFactors = FALSE)
+row.names(ihc_cell_freq) <- ihc_cell_freq$X
+ihc_cell_freq <- subset(ihc_cell_freq, select = -X)
+colnames(ihc_cell_freq) <- c("ast", "end", "oli", "mic", "neu")
+
+# Checking if the samples are in the same order
+stopifnot(row.names(ihc_gene_exp) == row.names(ihc_cell_freq))
+
+# Choosing 4 cell types
+ihc_cell_freq <- subset(ihc_cell_freq, select = c(ast,mic,neu,oli))
+cell_types <- colnames(ihc_cell_freq)
+
+mdata <- read.table(paste("data/", "ihc_pathoVariables.txt", sep = ""),
+                    stringsAsFactors = FALSE, sep = "\t")
+
+ihc_projids <- as.numeric(sapply(strsplit(row.names(ihc_gene_exp), "X"), function(x){x[2]}))
+row.names(ihc_gene_exp) <- row.names(ihc_gene_exp) <- ihc_projids
+ihc_mdata <- mdata[match(ihc_projids, mdata$projid),]
+```
+
+# CellCODE analysis -------------------------------------------------------
+
+## WE_m = UDV_t
+
+* marker genes has Marker and its associated cell type 
+* (markers_df_human_brain, colnames = c("markers", "cell"))
+* cellTypes - list of cell types for making the W matrix 
+* (unique(markers_df_human_brain[,2]))
+* numberMarkersPerCelltype - list of number of markers to take from each cell type 
+* c(100,100,100,100,100,50)
+
+```{r}
+make_w_matrix <- function(markerGenes, cellTypes, numberMarkersPerCellType){
+  mg <- c()
+  for (i in 1:length(cellTypes)){
+    mg_ct <- head(markerGenes$markers[which(markerGenes$cell == cellTypes[i])], n = numberMarkersPerCellType[i])
+    mg <- c(mg, mg_ct)
+  }
+  
+  w <- matrix(0L, nrow = sum(numberMarkersPerCellType), ncol = length(cellTypes))
+  colnames(w) <- cellTypes
+  rownames(w) <- mg
+  
+  sum_number_markers <- rep(0, length(numberMarkersPerCellType))
+  for (i in 1:length(sum_number_markers)){
+    if (i == 1){
+      sum_number_markers[i] = numberMarkersPerCellType[i]
+    } else {
+      sum_number_markers[i] = numberMarkersPerCellType[i] + sum_number_markers[i-1]
+    }
+  }
+  
+  for (i in 1:length(cellTypes)){
+    if (i == 1){
+      w[,cellTypes[i]][1:numberMarkersPerCellType[i]] = rep(1, numberMarkersPerCellType[i])
+    } 
+    else{
+      w[,cellTypes[i]][(sum_number_markers[i-1]+1) : sum_number_markers[i]] = rep(1, numberMarkersPerCellType[i])
+    }
+  }
+  
+  return(list(w, mg))
+}
+
+get_SPV_BrainRegion <- function(BrainRegion, MarkerGenes){
+  # Getting the expression matrices
+  BR <- readBMfile(BrainRegion)
+  colnames(BR) <- genes_mapped
+  BR$sample_gp <- find_sample_group(BrainRegion)
+  
+  BR_AD_Ctl <- BR[c(which(BR$sample_gp == "Control"), which(BR$sample_gp == "Definite AD")),]
+  sample_gp <- BR_AD_Ctl$sample_gp
+  BR_AD_Ctl <- subset(BR_AD_Ctl, select = -c(sample_gp))
+  
+  mg_new <- intersect(MarkerGenes, colnames(BR_AD_Ctl))
+  w_new <- w[mg_new,]
+  
+  # Finding E_m
+  # NOTE: length(intersect(mg, colnames(bm36))) = 4181 != 5500
+  # NOTE: length(which(is.na(colnames(bm36) == ""))) = 1029
+  
+  E_m <- t(BR_AD_Ctl[,mg_new])
+  colnames(E_m) <- rownames(BR_AD_Ctl)
+  spvs <- as.data.frame(my_getAllSPVs(brainRegion = paste(BrainRegion, "IHC", sep = ""), data = E_m, grp = sample_gp, dataTag = w_new,
+                                      method = "mixed", plot = T, mix.par = 0.3))
+}
+
+get_SPV_ihc <- function(GeneExpression, MG){
+  ad_ids <- ihc_mdata$projid[which(ihc_mdata$ceradsc %in% c(3,4))]
+  ctl_ids <- ihc_mdata$projid[which(ihc_mdata$ceradsc %in% c(1,2))]
+  sample_gp <- rep(1, length(row.names(GeneExpression)))
+  sample_gp[which(row.names(GeneExpression) %in% ad_ids)] = "Definite AD"
+  sample_gp[which(row.names(GeneExpression) %in% ctl_ids)] = "Control"
+  
+  mg_new <- intersect(MG, colnames(GeneExpression))
+  w_new <- w[mg_new,]
+  E_m <- t(GeneExpression[,mg_new])
+  colnames(E_m) <- rownames(GeneExpression)
+  spvs <- as.data.frame(my_getAllSPVs(brainRegion = "IHC", 
+                                      data = E_m, grp = sample_gp, dataTag = w_new,
+                                      method = "mixed", plot = T, mix.par = 0.3))
+}
+```
+
+# BRETIGEA analysis -------------------------------------------------------
+
+```{r}
+find_brainCells_BR <- function(BrainRegion, nMarker){
+  # Getting the expression matrices
+  BR <- readBMfile(BrainRegion)
+  colnames(BR) <- genes_mapped
+  BR$sample_gp <- find_sample_group(BrainRegion)
+  BR_AD_Ctl <- BR[c(which(BR$sample_gp == "Control"), which(BR$sample_gp == "Definite AD")),]
+  sample_gp <- BR_AD_Ctl$sample_gp
+  BR_AD_Ctl <- t(subset(BR_AD_Ctl, select = -c(sample_gp)))
+  return(as.data.frame(brainCells(BR_AD_Ctl, nMarker, species = "human", celltypes = c("ast", "mic", "neu", "oli"))))
+}
+
+# brainCells is a BRETIGEA function
+find_brainCells_ihc <- function(GeneExpression, nMarker){
+  return(as.data.frame(brainCells(t(GeneExpression), nMarker, species = "human")))
+}
+```
+
+# Making the ggpairs plot -------------------------------------------------
+
+## All the following plots will be for 4 cell-types, but different mg sets
+
+```{r}
+bretigea_10 <- find_brainCells_ihc(ihc_gene_exp, 10)
+bretigea_20 <- find_brainCells_ihc(ihc_gene_exp, 20)
+bretigea_50 <- find_brainCells_ihc(ihc_gene_exp, 50)
+
+ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(10,10,10,10))
+w <- ip[[1]]
+mg <- ip[[2]]
+cellcode_10 <- get_SPV_ihc(ihc_gene_exp, MG = mg)
+
+ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(20,20,20,20))
+w <- ip[[1]]
+mg <- ip[[2]]
+cellcode_20 <- get_SPV_ihc(ihc_gene_exp, MG = mg)
+
+ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(50,50,50,50))
+w <- ip[[1]]
+mg <- ip[[2]]
+cellcode_50 <- get_SPV_ihc(ihc_gene_exp, MG = mg)
+
+# cell-type can be "ast", "mic", "neu", and "oli"
+cell_type <- "mic"
+
+d1 <- bretigea_10[, cell_type]
+d2 <- cellcode_10[, cell_type]
+d3 <- bretigea_20[, cell_type]
+d4 <- cellcode_20[, cell_type]
+d5 <- bretigea_50[, cell_type]
+d6 <- cellcode_50[, cell_type]
+d7 <- ihc_cell_freq[, cell_type]
+
+data <- as.data.frame(cbind(d1, d2, d3, d4, d5, d6, d7))
+colnames(data) <- c("BRETIGEA 40mg", "CellCODE 40mg", "BRETIGEA 80mg", "CellCODE 80mg", "BRETIGEA 200mg", "CellCODE 200mg", "Truth")
+
+(pair_plot <- ggpairs(data, upper = list(continuous = wrap("cor", size = 7)),
+                     title = paste("Predictions for ", cell_type, " cell type", sep = "")))
+
+ggsave(path = "plots/",
+       plot = pair_plot,
+       device = "png",
+       filename = paste(cell_type, "_analysisDeconvolutionAlgos.png"),
+       width = 15, height = 12, dpi = 300)
+```
+
+# Comparing CellCODE vs BRETIGEA ------------------------------------------
+
+```{r}
+BM10_findBrainCells <- find_brainCells_BR(BrainRegion = "BM_10", nMarker = 20)
+
+ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(20,20,20,20))
+w <- ip[[1]]
+mg <- ip[[2]]
+BM10_spv <- get_SPV_BrainRegion("BM_10", mg)
+
+# Correlation matrix 
+BM10_findBrainCells <- subset(BM10_findBrainCells, select = c(ast, mic, neu, oli))
+cor_matrix <- cor(BM10_spv, BM10_findBrainCells)
+corrplot(cor_matrix,
+         type = "upper",
+         col = brewer.pal(n = 8, name = "YlOrRd"),
+         order = "hclust",
+         tl.col = "black",
+         tl.srt = 45,
+         addCoef.col = "gray95",
+         number.cex = 0.75,
+         mar = c(4,0,4,0),
+         title = "BM10: BRETIGEA 80mg vs CellCODE 80mg",
+         outline = T,
+         addgrid.col = "darkgray",
+         rect.lwd = 5,
+         addrect = 4,
+         rect.col = "black"
+)
+```
+
+# Scatter plot for Neuronal cell type proportion estimates
+
+```{r}
+neu_proportions <- data.frame(cbind(BM10_spv$neu, BM10_findBrainCells$neu))
+colnames(neu_proportions) <- c("CellCODE", "BRETIGEA")
+
+scatter_neu <- ggplot(neu_proportions, aes(x = BRETIGEA,y = CellCODE)) + 
+  geom_point(size = 2,color = "orange") + theme_bw(base_size = 20)  + 
+  theme(axis.text = element_text(size = 15, face = "bold"),
+        axis.title = element_text(size = 15,face = "bold"), 
+        plot.title = element_text(size = 18, face = "bold")) +
+  geom_smooth(method ='lm',color = "red") + stat_cor(method = "pearson") +
+  ggtitle("BM10: Scatter plot of estimated neuronal cell type frequencies")
+
+scatter_neu
+```
+
+# Scatter plot between CellCODE 80mg and True frequencies
+
+```{r}
+neu_proportions <- data.frame(cbind(d4, d7))
+colnames(neu_proportions) <- c("CellCODE", "True")
+
+scatter_neu <- ggplot(neu_proportions, aes(x = CellCODE,y = True)) + 
+  geom_point(size = 2,color = "orange") + theme_bw(base_size = 20)  + 
+  theme(axis.text = element_text(size = 15, face = "bold"),
+        axis.title = element_text(size = 15,face = "bold"), 
+        plot.title = element_text(size = 18, face = "bold")) +
+  geom_smooth(method ='lm',color = "red") + stat_cor(method = "pearson") +
+  ggtitle("BM10: Scatter plot of estimated neuronal cell type frequencies")
+
+scatter_neu
+```
