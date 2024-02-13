@@ -202,29 +202,37 @@ ip <- make_w_matrix(markers_df_human_brain, c("ast", "mic", "neu", "oli"), c(50,
 w <- ip[[1]]
 mg <- ip[[2]]
 cellcode_50 <- get_SPV_ihc(ihc_gene_exp, MG = mg)
+```
 
 # cell-type can be "ast", "mic", "neu", and "oli"
-cell_type <- "mic"
 
-d1 <- bretigea_10[, cell_type]
-d2 <- cellcode_10[, cell_type]
-d3 <- bretigea_20[, cell_type]
-d4 <- cellcode_20[, cell_type]
-d5 <- bretigea_50[, cell_type]
-d6 <- cellcode_50[, cell_type]
-d7 <- ihc_cell_freq[, cell_type]
+```{r}
+make_ggpairs_prediction_plot <- function(cell_type){
+  d1 <- bretigea_10[, cell_type]
+  d2 <- cellcode_10[, cell_type]
+  d3 <- bretigea_20[, cell_type]
+  d4 <- cellcode_20[, cell_type]
+  d5 <- bretigea_50[, cell_type]
+  d6 <- cellcode_50[, cell_type]
+  d7 <- ihc_cell_freq[, cell_type]
+  
+  data <- as.data.frame(cbind(d1, d2, d3, d4, d5, d6, d7))
+  colnames(data) <- c("BRETIGEA 40mg", "CellCODE 40mg", "BRETIGEA 80mg", "CellCODE 80mg", "BRETIGEA 200mg", "CellCODE 200mg", "Truth")
+  
+  (pair_plot <- ggpairs(data, upper = list(continuous = wrap("cor", size = 7)),
+                       title = paste("Predictions for ", cell_type, " cell type", sep = "")))
+  
+  ggsave(path = "plots/",
+         plot = pair_plot,
+         device = "pdf",
+         filename = paste0(cell_type, "_analysisDeconvolutionAlgos.pdf"),
+         width = 15, height = 12, dpi = 300)
+}
 
-data <- as.data.frame(cbind(d1, d2, d3, d4, d5, d6, d7))
-colnames(data) <- c("BRETIGEA 40mg", "CellCODE 40mg", "BRETIGEA 80mg", "CellCODE 80mg", "BRETIGEA 200mg", "CellCODE 200mg", "Truth")
-
-(pair_plot <- ggpairs(data, upper = list(continuous = wrap("cor", size = 7)),
-                     title = paste("Predictions for ", cell_type, " cell type", sep = "")))
-
-ggsave(path = "plots/",
-       plot = pair_plot,
-       device = "png",
-       filename = paste(cell_type, "_analysisDeconvolutionAlgos.png"),
-       width = 15, height = 12, dpi = 300)
+make_ggpairs_prediction_plot("ast")
+make_ggpairs_prediction_plot("mic")
+make_ggpairs_prediction_plot("neu")
+make_ggpairs_prediction_plot("oli")
 ```
 
 # Comparing CellCODE vs BRETIGEA ------------------------------------------

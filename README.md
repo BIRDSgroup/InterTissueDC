@@ -5,7 +5,7 @@ This is the official repository of the paper ["*Alzheimer’s disease rewires ge
 The code was developed by Kailash B P, Manikandan Narayanan (in consultation with the other co-authors of the paper listed above), and these developers are jointly referred to as the "BIRDS Group, IIT Madras" in the preamble of all code files in this InterTissueDC project.
 
 <p align="center">
-  <img src="https://github.com/BIRDSgroup/InterTissueDC/blob/main/images/methodology.png" />
+  <img src="https://github.com/BIRDSgroup/InterTissueDC/blob/main/plots/methodology.png" />
 </p>   
 
 ## License preamble
