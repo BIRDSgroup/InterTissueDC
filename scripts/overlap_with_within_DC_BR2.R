@@ -17,7 +17,10 @@ find_overlap_with_within_dc_per_br_all_gene_pairs <- function(BR){
   all_dc_edges <- rbind(all_dc_edges_ab, all_dc_edges_ba)
   
   
-  write_csv(na.omit(all_dc_edges), paste0("results/", BR, "_BR2_overlap_with_within_DC.csv"))
+  
+  # dim(na.omit(all_dc_edges))
+  
+  write_csv(all_dc_edges[which(!is.na(all_dc_edges$a)),], paste0("results/", BR, "_BR2_overlap_with_within_DC.csv"))
 }
 
 find_overlap_with_within_dc_per_br_all_gene_pairs(BR = "BM10")
